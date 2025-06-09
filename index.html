@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Тир — Консольная игра в браузере</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #111;
+      color: #0f0;
+      padding: 20px;
+    }
+    #console {
+      background: #000;
+      padding: 20px;
+      border: 2px solid #0f0;
+      height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      display: none;
+    }
+    #input {
+      width: 100%;
+      font-family: monospace;
+      font-size: 16px;
+      padding: 10px;
+      background: #222;
+      color: #0f0;
+      border: 2px solid #0f0;
+      margin-top: 10px;
+      display: none;
+    }
+    #menu {
+      text-align: center;
+      margin-top: 50px;
+    }
+    #menu button, #menu select {
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 10px;
+      border: 2px solid #0f0;
+      cursor: pointer;
+    }
+    #menu button:hover, #menu select:hover {
+      background: #0f0;
+      color: #000;
+    }
+    #statsDisplay {
+      margin-top: 20px;
+      color: #0f0;
+      font-size: 16px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Игра "Тир" в браузере.</h1>
+
+  <div id="menu">
+    <label for="difficulty">Сложность:</label>
+    <select id="difficulty">
+      <option value="9">Легко</option>
+      <option value="6">Средне</option>
+      <option value="3">Тяжело</option>
+    </select>
+    <br>
+    <button onclick="openGame()">Играть</button>
+    <button onclick="rules()">Правила</button>
+    <button onclick="exitGame()">Выход</button>
+    <div id="statsDisplay"></div>
+  </div>
+
+  <div id="console"></div>
+  <input id="input" placeholder="Введите команду и нажмите Enter...">
+
+  <script>
+    const term = document.getElementById('console');
+    const input = document.getElementById('input');
+    const menu = document.getElementById('menu');
+    const statsDisplay = document.getElementById('statsDisplay');
+    const difficultySelect = document.getElementById('difficulty');
+
+    const WINNING_SCORE = 3;
+    const MAX_CELLS = 9;
+
+    let gameState = 'menu';
+    let board = [];
+    let targets = [];
+    let totalShots = 0;
+    let goodShots = 0;
+
+    let playerWins = parseInt(localStorage.getItem('wins')) || 0;
+    let botWins = parseInt(localStorage.getItem('losses')) || 0;
+    let record = parseInt(localStorage.getItem('record')) || 0;
+    let gamesPlayed = playerWins + botWins;
+
+    function saveStats() {
+      localStorage.setItem('wins', playerWins);
+      localStorage.setItem('losses', botWins);
+      localStorage.setItem('record', record);
+    }
+
+    function updateStatsDisplay() {
+      statsDisplay.innerText = `Игр сыграно: ${gamesPlayed} | Побед: ${playerWins} | Поражений: ${botWins} | Рекорд: ${record}`;
+    }
+
+    function log(text = '') {
+      term.textContent += text + '\n';
+      term.scrollTop = term.scrollHeight;
+    }
+
+    function printBoard() {
+      let str = '\n';
+      for (let i = 0; i < 3; i++) {
+        str += board.slice(i * 3, (i + 1) * 3).map(cell => cell || ' ').join(' | ') + '\n';
+        if (i < 2) str += '---------\n';
+      }
+      str += `\nОсталось выстрелов: ${totalShots}\n`;
+      log(str);
+    }
+
+    function openGame() {
+      menu.style.display = 'none';
+      term.style.display = 'block';
+      input.style.display = 'block';
+      term.textContent = '';
+      const selectedDifficulty = parseInt(difficultySelect.value);
+      startGame(selectedDifficulty);
+    }
+
+    function showMenu() {
+      gameState = 'menu';
+      menu.style.display = 'block';
+      term.style.display = 'none';
+      input.style.display = 'none';
+      updateStatsDisplay();
+    }
+
+    function startGame(level) {
+      board = Array(9).fill('');
+      goodShots = 0;
+      targets = [];
+      totalShots = level;
+      gameState = 'game';
+      while (targets.length < 3) {
+        let r = Math.floor(Math.random() * 9);
+        if (!targets.includes(r)) targets.push(r);
+      }
+      log("\nИгра началась!");
+      printBoard();
+      log("Введите число от 1 до 9 (0 для выхода в меню):");
+    }
+
+    function rules() {
+      menu.style.display = 'none';
+      term.style.display = 'block';
+      input.style.display = 'block';
+      gameState = 'rules';
+      term.textContent = '';
+      log(`\nПравила игры "Тир":
+1. Поле 3x3, ячейки от 1 до 9.
+2. У вас есть ограниченное число выстрелов в зависимости от выбранной сложности.
+3. Бот выбирает 3 мишени.
+4. Вы вводите номер ячейки.
+5. Попадание — "O", промах — "X".
+6. Победа — 3 попадания. Поражение — закончились выстрелы.
+\nНажмите Enter для возврата в меню.`);
+    }
+
+    function gameInput(val) {
+      const num = parseInt(val);
+      if (num === 0) {
+        log("Выход в меню...");
+        showMenu();
+        return;
+      }
+      const idx = num - 1;
+      if (idx < 0 || idx >= 9 || board[idx]) {
+        log("Некорректный ход. Попробуйте снова.");
+        return;
+      }
+      if (targets.includes(idx)) {
+        board[idx] = 'O';
+        goodShots++;
+      } else {
+        board[idx] = 'X';
+      }
+      totalShots--;
+      printBoard();
+
+      if (goodShots >= WINNING_SCORE) {
+        log("\nВы выиграли!");
+        playerWins++;
+        if (playerWins > record) {
+          record = playerWins;
+          log("🎉 Новый рекорд! 🎉");
+        }
+        gameState = 'post';
+        saveStats();
+        gamesPlayed = playerWins + botWins;
+        log("Нажмите Enter для возврата в меню.");
+      } else if (totalShots <= 0) {
+        log("\nВы проиграли! Мишени были: " + targets.map(i => i + 1).join(", "));
+        botWins++;
+        gameState = 'post';
+        saveStats();
+        gamesPlayed = playerWins + botWins;
+        log("Нажмите Enter для возврата в меню.");
+      } else {
+        log("Введите следующий ход:");
+      }
+    }
+
+    function exitGame() {
+      menu.innerHTML = '<h2>Спасибо за игру!</h2>';
+    }
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const val = input.value.trim();
+        input.value = '';
+        if (!val && (gameState === 'rules' || gameState === 'post')) {
+          showMenu();
+          return;
+        }
+        if (gameState === 'game') {
+          gameInput(val);
+        }
+      }
+    });
+
+    updateStatsDisplay();
+  </script>
+</body>
+</html>
