@@ -11,13 +11,40 @@
       font-family: monospace;
     }
     body {
-      background: url("https://sniperland.by/wp-content/uploads/2023/12/111.jpg") no-repeat center center fixed;
       background-size: cover;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       position: relative;
+    }
+    .background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    .background-image {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity 2s ease-in-out;
+    }
+    .background-image.active {
+      opacity: 1;
+    }
+    .background-container::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(0, 0, 0, 0.24) 40%, rgba(0, 0, 0, 0.6) 100%);
+      pointer-events: none;
     }
     h1 {
         color: white;
@@ -30,14 +57,14 @@
     }
     .container {
       text-align: center;
-      background-color: rgba(0, 0, 0, 0.5); /* затемнённый фон для удобочитаемости */
+      background-color: rgba(0, 0, 0, 0.5);
       padding: 40px;
       border: 2px solid #FFD700;
       border-radius: 8px;
       margin-bottom: 20px;
     }
     .btn {
-      background-color: #FFD700; /* жёлтый цвет */
+      background-color: #FFD700; 
       color: #000;
       font-family: monospace;
       font-size: 20px;
@@ -49,10 +76,10 @@
       border-radius: 4px;
     }
     .btn:hover {
-      background-color: #FFC107; /* немного более яркий жёлтый */
+      background-color: #FFC107; 
       transform: scale(1.05);
     }
-    /* Контейнер для связки кнопки и поля */
+
     .collapsible-container {
       width: 80%;
       margin: 0 auto 20px;
@@ -100,6 +127,12 @@
   </style>
 </head>
 <body>
+    <div class="background-container">
+        <div class="background-image active" style="background-image: url('https://avatars.mds.yandex.net/get-altay/11408080/2a00000193b53da182be1094f46c9c1dddae/XXXL');"></div>
+        <div class="background-image" style="background-image: url('https://avatars.mds.yandex.net/get-altay/879259/2a00000166edbbb75368eab146efef074f4f/XXL');"></div>
+        <div class="background-image" style="background-image: url('https://avatars.mds.yandex.net/get-altay/4508101/2a000001775399caa0c28da191025a726f5d/XXL_height');"></div>
+        <div class="background-overlay"></div>
+  </div>
   <div class="container">
     <h1>Добро пожаловать!</h1>
     <button class="btn" onclick="location.href='game.html'">Играть</button>
@@ -133,6 +166,25 @@
         infoContent.style.maxHeight = infoContent.scrollHeight + "px";
       }
     });
+  </script>
+  <script>
+    //Получаем все элементы фона
+    const backgrounds = document.querySelectorAll(".background-image");
+    let currentIndex = 0;
+
+    function changeBackground() {
+      //Убираем активный класс у всех фонов
+      backgrounds.forEach(bg => bg.classList.remove("active"));
+
+      //Добавляем активный класс текущему фону
+      backgrounds[currentIndex].classList.add("active");
+
+      //Переход к следующему фону
+      currentIndex = (currentIndex + 1) % backgrounds.length;
+    }
+
+    //Меняем фон каждые 7 секунд
+    setInterval(changeBackground, 7000);
   </script>
 </body>
 </html>
